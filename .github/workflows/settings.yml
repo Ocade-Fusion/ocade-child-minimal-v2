@@ -1,0 +1,9 @@
+repository:
+  has_wiki: false
+  has_projects: false
+  default_branch: master
+
+# Activation automatique des workflows pour les forks
+actions:
+  enabled: true
+  allowed_actions: all
