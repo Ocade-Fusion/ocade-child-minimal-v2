@@ -5,25 +5,19 @@ on:
     branches:
       - master
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.run_number > 1 && !contains(github.event.head_commit.message, 'NORUN') # Workflow s'exécute uniquement si pas le premier commit et qu'il n'y a pas NORUN dans le message du commit.
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Vérifier si c'est le premier commit
-        id: check_first_commit
-        run: |
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          echo "Nombre de commits : $COMMIT_COUNT"
-          if [[ "$COMMIT_COUNT" -eq 1 ]]; then
-            echo "C'est le premier commit du dépôt généré, annulation du workflow."
-            exit 1
-          fi
 
       - name: Fetch Tags
         run: |
