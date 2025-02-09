@@ -63,6 +63,6 @@ add_filter('site_transient_update_themes', function ($transient) {
     return $transient;
 });
 
-add_action('upgrader_process_complete', function ($upgrader_object, $options) {
-    if ($options['action'] === 'update' && $options['type'] === 'theme') delete_transient('**NOM_DEPOT_GITHUB**_remote_version');
+add_action('upgrader_process_complete', function ($upgrader_object, $options) use ($OCADE_REMOTE_VERSION) {
+    if ($options['action'] === 'update' && $options['type'] === 'theme') delete_transient($OCADE_REMOTE_VERSION);
 }, 10, 2);
