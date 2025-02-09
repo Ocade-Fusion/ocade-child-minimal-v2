@@ -2,23 +2,24 @@
 
 namespace OcadeChildMinimal;
 
-add_filter('site_transient_update_themes', function ($transient) {
-    $ORGANISATION_GITHUB = '**NOM_ORGANISATION_GITHUB**';
-    $DEPOT_GITHUB = '**NOM_DEPOT_GITHUB**';
-    
-    $OCADE_THEME_REPO = 'https://github.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB;
-    $OCADE_VERSION_URL = 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/version.txt';
-    $OCADE_ZIP_URL = $OCADE_THEME_REPO . '/releases/latest/download/' . $DEPOT_GITHUB . '.zip';
-    $OCADE_REMOTE_VERSION = $DEPOT_GITHUB . '_remote_version';
-    $OCADE_ICON_SVG_URL = 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon.svg';
-    $OCADE_ICONS = [
-        '1x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-1x.png',
-        '2x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-2x.png',
-        '3x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-3x.png',
-        '4x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-4x.png',
-        '5x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-5x.png'
-    ];
+// Définition des variables globales
+$ORGANISATION_GITHUB = '**NOM_ORGANISATION_GITHUB**';
+$DEPOT_GITHUB = '**NOM_DEPOT_GITHUB**';
 
+$OCADE_THEME_REPO = 'https://github.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB;
+$OCADE_VERSION_URL = 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/version.txt';
+$OCADE_ZIP_URL = $OCADE_THEME_REPO . '/releases/latest/download/' . $DEPOT_GITHUB . '.zip';
+$OCADE_REMOTE_VERSION = $DEPOT_GITHUB . '_remote_version';
+$OCADE_ICONS = [
+    'svg' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon.svg',
+    '1x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-1x.png',
+    '2x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-2x.png',
+    '3x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-3x.png',
+    '4x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-4x.png',
+    '5x' => 'https://raw.githubusercontent.com/' . $ORGANISATION_GITHUB . '/' . $DEPOT_GITHUB . '/master/assets/icons/icon-5x.png'
+];
+
+add_filter('site_transient_update_themes', function ($transient) use ($OCADE_THEME_REPO, $OCADE_VERSION_URL, $OCADE_ZIP_URL, $OCADE_REMOTE_VERSION, $OCADE_ICONS) {
     if (!is_object($transient)) $transient = new \stdClass();
 
     $theme = wp_get_theme();
@@ -27,7 +28,7 @@ add_filter('site_transient_update_themes', function ($transient) {
 
     // Récupérer la version distante
     $remote_version = get_transient($OCADE_REMOTE_VERSION);
-    if (!$remote_version) { // Évite d'appeler GitHub à chaque chargement
+    if (!$remote_version) {
         $response = wp_remote_get($OCADE_VERSION_URL);
 
         if (is_wp_error($response)) {
@@ -43,20 +44,19 @@ add_filter('site_transient_update_themes', function ($transient) {
             return $transient;
         }
 
-        if (!empty($remote_version)) set_transient($OCADE_REMOTE_VERSION, $remote_version, 6 * HOUR_IN_SECONDS);
-        else error_log('Impossible de stocker la version distante car elle est vide.');
+        set_transient($OCADE_REMOTE_VERSION, $remote_version, 6 * HOUR_IN_SECONDS);
     }
 
     // Comparaison des versions
     if (version_compare($remote_version, $current_version, '>')) {
-        if (!isset($transient->response)) $transient->response = []; // S'assurer que c'est un tableau
+        if (!isset($transient->response)) $transient->response = [];
 
         $transient->response[$theme_slug] = [
             'theme'       => $theme_slug,
             'new_version' => $remote_version,
             'url'         => $OCADE_THEME_REPO,
             'package'     => $OCADE_ZIP_URL,
-            'icons'       => array_merge(['svg' => $OCADE_ICON_SVG_URL], $OCADE_ICONS),
+            'icons'       => $OCADE_ICONS,
         ];
     }
 
@@ -64,5 +64,7 @@ add_filter('site_transient_update_themes', function ($transient) {
 });
 
 add_action('upgrader_process_complete', function ($upgrader_object, $options) use ($OCADE_REMOTE_VERSION) {
-    if ($options['action'] === 'update' && $options['type'] === 'theme') delete_transient($OCADE_REMOTE_VERSION);
+    if ($options['action'] === 'update' && $options['type'] === 'theme') {
+        delete_transient($OCADE_REMOTE_VERSION);
+    }
 }, 10, 2);
