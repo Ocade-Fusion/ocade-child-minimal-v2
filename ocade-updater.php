@@ -63,5 +63,5 @@ add_filter('site_transient_update_themes', function ($transient) {
 });
 
 add_action('upgrader_process_complete', function ($upgrader_object, $options) {
-    if ($options['action'] === 'update' && $options['type'] === 'theme') delete_transient('ocade-minimal-v2_remote_version');
+    if ($options['action'] === 'update' && $options['type'] === 'theme') delete_transient('**NOM_DEPOT_GITHUB**_remote_version');
 }, 10, 2);
